@@ -1,0 +1,9 @@
+name: softfocus
+dependencies:
+- python>=3.6
+- appdirs>=1.4.0
+- numpy>=1.12.0
+- packaging>=16.8
+- pandas>=0.19.2
+- bokeh>=0.2.14
+- matplotlib>=2.2
