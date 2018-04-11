@@ -86,7 +86,7 @@ from bokeh.io import curdoc
 import pandas as pd
 #from datetime import date as datetype
 import time
-from datetime import date
+from datetime import date, timedelta
 
 #from flask import Flask, make_response, Response, send_file
 #app = Flask(__name__)
@@ -224,7 +224,7 @@ class SoftFocus(object):
         last_date = self.df['last modification'].max() 
         first_date = self.df['last modification'].min()
         if last_date == first_date:
-            last_date = date.today()
+            last_date = first_date + timedelta(days=1)
         self.date_slider = DateRangeSlider(title='Start date',
                                       start=first_date,
                                       end=last_date,
