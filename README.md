@@ -2,15 +2,15 @@
 Interact with a database of tidy data tables using Bokeh
 
 ## objective definition
-The purpose of this 'bokeh serve' example is to give a template for vizualizing typical measurement databases.
+The purpose of this 'bokeh serve' example is to give a template for visualizing typical measurement databases.
 
 If using the "tidy data" format, a database should be comprising of several tables, each representing a single observational unit (e.g. a sample test in certain experimental conditions). 
-This unit comprises of variables (the columns) recoded in successive observations (the rows). See [Wickham's paper](http://vita.had.co.nz/papers/tidy-data.pdf)
+This unit comprises of variables (the columns) recorded in successive observations (the rows). See [Wickham's paper](http://vita.had.co.nz/papers/tidy-data.pdf)
 
-For vizualizing purpose, it is practical to have a dashboard with a main tab or window listing a summary of the information contained in each table. Then select one or several of them and plot/visualize their content. The objective
+For vizualizing purpose, it is practical to have a **dashboard** with a main tab or window listing a summary of the information contained in each table. Then select one or several of them and plot/visualize their content. The objective
 is to be able to compare efficiently variables against each other, but also observational units against each other.
 
-*This template uses the sample data of Bokeh, so the different csv files do not represent similar observational units.*
+*This template uses the sample data of Bokeh, so the different csv files do not represent similar observational units nor use the tidy data format.*
 
 
 Some functionalities of this template:
@@ -56,13 +56,13 @@ The first time you run it, the bokeh sample data set will be downloaded to `~\.b
 
 ## Outlook / Contributing
 Things to add/improve in the template:
-    - find a more suitable data set with several similar tidy tables
-    - find a better method to change between column names for the axes
-    - delete excess xls files in a separate thread without document lock
-    - use Tornado to implement the download method without dummy
-    - make a main class for the main tab/multi tab functionality, then subclasses for the type of database (csv folders, sql, hd5...)
-    - add SQL functionality    
-    - filter or use a custom script on the content
+- find a more suitable data set comprising of many similar tidy tables
+- find a better method to change between column names for the axes
+- delete excess xls files in a separate thread without document lock
+- use Tornado (or anything else) to implement the download method without dummy
+- make a main class for the main tab/multi tab functionality, then subclasses for the type of database (csv folders, sql, hd5...)
+- add SQL functionality    
+- filter or use a custom script on a table
     
 ## Author
 Hugues-Yanis Amanieu, hyamani.eu
