@@ -221,6 +221,8 @@ class SoftFocus(object):
         #date selector
         last_date = self.df['last modification'].max() 
         first_date = self.df['last modification'].min()
+        if last_date == first_date:
+            last_date = date.today()
         self.date_slider = DateRangeSlider(title='Start date',
                                       start=first_date,
                                       end=last_date,
