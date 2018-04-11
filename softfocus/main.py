@@ -129,9 +129,6 @@ class SoftFocus(object):
         self.document.title = "Soft Focus"
         self.document.add_root(self.layout)
         logger.info('layout added to document')
-        print(self.tabs)
-        print(self.tabs.active)
-        print(self.info_text.text)
         
         #show main table
 #        self.update()
@@ -140,6 +137,9 @@ class SoftFocus(object):
         #add a callback called every hour to delete excessive amount of xlsx
         # in the /static/uploads folder, where uploads are        
         self.document.add_periodic_callback(self._delete_excess_xlsx,3600000)
+        
+        #variable holding app status
+        self.sel_csv = None#selected row from main table
         
         
         #dicts hold data from all opened secondary classes
@@ -150,6 +150,8 @@ class SoftFocus(object):
         self.plot_dfs=dict()#dataframe of each plotted test
         self.ly = dict()#GlyphRenderers of each opened tab
         self.ly2 = dict()#GlyphRenderers of each opened tab (secondary y-axis)
+        
+        
         
     def create(self):
         """parse the bokeh serve arguments then create the main layout
@@ -309,17 +311,26 @@ class SoftFocus(object):
             try:
                 r = f(*args,**kwargs)
             except:
-                logger.error("Unexpected error:",sys.exc_info()[0])
+                import traceback
+                err, val, tb = sys.exc_info()
+                logger.error(("Unexpected error:{0}\n"
+                              "Error value: {1}\n"
+                              "Error traceback: {2}\n"
+                              "In function {3}").format(err,
+                                                        val,
+                                              ''.join(traceback.format_tb(tb)),
+                                                        f))
                 self.info_text.text = ('<font color="red">'
-                                       'Error: {}'
-                                       '</font>').format(sys.exc_info()[0])
+                                       'Error: {0}'
+                                       '</font>').format(str(err))
+                return
             self.info_text.text = '<font color="green">ready.</font>'
             return r
         return wait_please
     
     
     #call function when selection on table
-    def sel_table(self, attr, _, value):
+    def sel_table(self, attr, old, new):
         """
         Selection of a cell/row in a tab
         """
@@ -327,10 +338,9 @@ class SoftFocus(object):
         
         if sels:#if not empty
             self.plot_button.disabled = False
-            self.sel_csv = (self.main_source.data['CSV'][sels[0]],#system number
-                    self.main_source.data['size(kB)'][sels[0]])#test number
-#            print(self.sel_csv)
+            self.sel_csv = self.main_source.data['CSV'][sels[0]]
         else:
+            self.sel_csv = None
             self.plot_button.disabled = True
             
     #define callback function to show new table
@@ -379,12 +389,17 @@ class SoftFocus(object):
         
         Each tab is differenciated by its name. The name is the csv file name
         """
-        
+        #check if at least one line is selected
+        if not self.sel_csv:
+            self.sel_table(None,None,None)
+            return
         
         #plot controls
         
-        logger.info("adding plot of ",self.sel_csv)
-        plot_df = pd.DataFrame(os.path.join(self.data_dir, self.sel_csv))
+        logger.info("adding plot of {0}".format(self.sel_csv))
+        plot_df = pd.read_csv(os.path.join(self.data_dir, self.sel_csv),
+                              parse_dates=True,
+                              infer_datetime_format=True)
         self.plot_dfs[self.sel_csv] = plot_df
         
         cols = plot_df.columns.tolist()
@@ -489,7 +504,7 @@ class SoftFocus(object):
         controls = widgetbox(plot_group_text,x_sel,y_sel,y_sel2,plot_b)
         #tab panel for this plot, differenciated with its name        
         plot_tab = Panel(child=row(column(controls,download_b,exit_b),p),
-                         title="Plot {}".self.sel_csv,
+                         title="Plot {}".format(self.sel_csv),
                          closable=True,
                          name=str(self.sel_csv))#name of tab is csv filename
         
@@ -604,7 +619,7 @@ class SoftFocus(object):
             os.remove(xlsxpath)
         writer = pd.ExcelWriter(xlsxpath,
                                 engine='xlsxwriter')
-        logger.info('Testname: ',test)
+        logger.info('Test name: {0}'.format(test))
         data.to_excel(writer,'data'+test)
 #        infos.to_excel(writer,'info'+infos['Testname'])        
         writer.close()
