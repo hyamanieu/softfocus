@@ -25,8 +25,8 @@ table. Then select one or several of them and plot their content. The objective
 is to be able to compare efficiently variables against each other, but also
 observational units against each other.
 
-This template uses the sample data of Bokeh, so the different csv files do not
-represent similar observational units.
+By default, this template creates 16 csv files contaning random values with
+3 variables: time, volt, current
 
 
 Some functionalities of this template:
@@ -49,9 +49,9 @@ Things to add/improve in the template:
                       
 
 author: https://github.com/hyamanieu/
-V 0.1
+V 0.2
 """
-__version__ = '0.1'
+__version__ = '0.2'
 
 
 import sys
@@ -59,11 +59,18 @@ import os
 
 #Bokeh imports
 from bokeh.layouts import row, widgetbox, column
-from bokeh.models import Button, ColumnDataSource
-from bokeh.models import LinearAxis, Range1d, CustomJS
+from bokeh.models import Button, ColumnDataSource, Circle
+from bokeh.models import (LinearAxis, 
+                          DataRange1d, 
+                          CustomJS, 
+                          Plot,
+                          Line,
+                          BasicTicker,
+                          Title,
+                          )
 #from bokeh.models.formatters import (BasicTickFormatter,
 #                                     NumeralTickFormatter)
-from bokeh.models.annotations import LegendItem
+from bokeh.models.annotations import LegendItem, Legend
 from bokeh.models.widgets import (DataTable, 
                                   DateFormatter, 
                                   TableColumn,
@@ -103,7 +110,7 @@ logger.setLevel(logging.DEBUG)
 logger.addHandler(file_handler)
 
 
-
+CURRENT_DIR = os.path.dirname(__file__)
 
 
 class SoftFocus(object):
@@ -142,14 +149,8 @@ class SoftFocus(object):
         self.sel_csv = None#selected row from main table
         
         
-        #dicts hold data from all opened secondary classes
-        self.x_sel = dict()#all dropdown x selection menus from opened tabs
-        self.y_sel = dict()#all dropdown y selection menus from opened tabs
-        self.y_sel2 = dict()#all dropdown secondary y selection menus
-        self.figs = dict()#all figures from opened tabs
+        #dicts hold data from opened samples
         self.plot_dfs=dict()#dataframe of each plotted test
-        self.ly = dict()#GlyphRenderers of each opened tab
-        self.ly2 = dict()#GlyphRenderers of each opened tab (secondary y-axis)
         
         
         
@@ -172,11 +173,15 @@ class SoftFocus(object):
             sys.exit(0)
         
         elif len(sys.argv)==1:
-            from bokeh.util.sampledata import external_data_dir
-            data_dir = external_data_dir()
-            if not os.path.exists(data_dir):
-                from bokeh.util.sampledata import download as bokeh_download
-                bokeh_download()                
+            data_dir = os.path.join(CURRENT_DIR,'..','tests')
+            if (not os.path.exists(data_dir)
+                or (len(os.listdir(data_dir))<1)
+                ):
+                logger.info('Creating new test folder...')
+                logger.info('{0}'.format(data_dir))
+                os.mkdir(data_dir)
+                from create_random import create_random
+                create_random(data_dir)
         elif len(sys.argv)==2:
             data_dir = sys.argv[1]
             if not os.path.isdir(data_dir):
@@ -287,7 +292,8 @@ class SoftFocus(object):
         
         #add a status text above all tabs
         self.info_text = Div(text='<font color="green">ready.</font>',
-                                 width=200, height=25)
+                             sizing_mode = "stretch_both",
+                             height=25)
         #main layout
         self.layout = column([self.info_text,self.tabs])
         
@@ -320,9 +326,10 @@ class SoftFocus(object):
                                                         val,
                                               ''.join(traceback.format_tb(tb)),
                                                         f))
-                self.info_text.text = ('<font color="red">'
-                                       'Error: {0}'
-                                       '</font>').format(str(err))
+                self.info_text.text = (
+                 '<font color="red">'
+                 'Error: {0}'
+                 '</font>').format(traceback.format_exception_only(err,val)[0])
                 return
             self.info_text.text = '<font color="green">ready.</font>'
             return r
@@ -403,55 +410,34 @@ class SoftFocus(object):
         self.plot_dfs[self.sel_csv] = plot_df
         
         cols = plot_df.columns.tolist()
-        x_sel = Select(title='X-Axis',value=cols[0],options=cols)
-        y_sel = Select(title='Y-Axis',value=cols[1],options=cols)
-        y_sel2 = Select(title='Y-Axis 2',value='None',options=cols+['None'])
+        x_sel = Select(title='X-Axis',
+                       value=cols[0],
+                       options=cols,
+                       name='x_sel')
+        y_sel = Select(title='Y-Axis',value=cols[1],options=cols,
+                       name='y_sel')
+        y_sel2 = Select(title='Y-Axis 2',value='None',options=cols+['None'],
+                       name='y_sel2')
                
         #exit button
         exit_b = Button(label="Exit", button_type="success")
         exit_b.on_click(self.remove_current_tab)
         #download button
-        download_b = Button(label="Download", button_type="success")
+        download_b = Button(label="Download", button_type="success",
+                            name = "download_b")
         download_b.on_click(self.download)
+        download_b.tags = [0]
         
         
         #prepare figure
-        source = ColumnDataSource(plot_df)
-        p = figure(title=self.sel_csv,
-                   x_axis_label=x_sel.value,
-                   y_axis_label=y_sel.value,
-#                   sizing_mode = 'stretch_both',
-                   )
-        #primary y-axis
-        self.ly[self.sel_csv] = p.line(x_sel.value, 
-               y_sel.value,
-               source=source,
-               legend=y_sel.value, 
-               line_width=2)
-        #secondary y-axis
-        p.extra_y_ranges = {"right_axis": Range1d(bounds='auto')}
-        self.ly2[self.sel_csv] = p.line(x_sel.value,
-               cols[2],
-               source=source,
-               legend=y_sel2.value, 
-               line_width=2,
-               color='red',
-               y_range_name='right_axis' )
-        p.add_layout(LinearAxis(bounds='auto',y_range_name='right_axis'),
-                     'right')
-
-        #make all axes and lines invisible until user clicks "plot"        
-        p.yaxis[1].visible=False
-        p.xaxis[0].visible=False
-        p.yaxis[0].visible=False
-        self.ly[self.sel_csv].visible = False
-        p.xaxis[0].axis_label=x_sel.value
-        p.yaxis[0].axis_label=y_sel.value
-        
-        #empty the legend until user clicks "plot"
-        p.legend.items = []
+        p = Plot(x_range=DataRange1d(), 
+                 y_range=DataRange1d(), 
+                 plot_height=600,
+                 plot_width=600,
+                 title=Title(text=self.sel_csv),
+                 name='plot')
         #plot button
-        plot_b = Button(label="Plot", button_type="success")
+        plot_b = Button(label="Plot", button_type="success",name='plot_b')
         plot_b.on_click(self.update_plot)
         
         #text to indicate widgets manipulating the plot only
@@ -462,11 +448,16 @@ class SoftFocus(object):
         #to activate the download of whatever file is in the path 
         #./static/uploads/sessionid_output.xlsx, where sessionid is the id of the
         # current session.
-        dummy = p.circle([1], [1],name='dummy',alpha=0)
+#        dummy = p.add_glyph(ColumnDataSource({'x':[0],'y':[0]}),
+#                            Circle(x="x",y="y",
+#                                   size=10,
+#                                    line_alpha=0,
+#                                    fill_alpha=0),
+#                            name='dummy')
         JScode_fetch = """
-        var filename = p.title.text;//file name on client side
+        var filename = t.name;//file name on client side
         var get_path = '/softfocus/static/uploads/';//file path on server side
-        var session_id = p.tags[0];
+        var session_id = t.tags[0];
         get_path = get_path.concat(session_id);
         get_path = get_path.concat('_output.xlsx')
         filename = filename.concat('.xlsx');
@@ -496,23 +487,23 @@ class SoftFocus(object):
         """
         
         session_id= str(self.document.session_context._id)
-        p.tags = [session_id]
-        dummy.glyph.js_on_change('size', CustomJS(args=dict(p=p),
-                                          code=JScode_fetch))
+#        dummy.glyph.js_on_change('size', CustomJS(args=dict(p=p),
+#                                          code=JScode_fetch))
         
         #plot controls together in a box
         controls = widgetbox(plot_group_text,x_sel,y_sel,y_sel2,plot_b)
         #tab panel for this plot, differenciated with its name        
-        plot_tab = Panel(child=row(column(controls,download_b,exit_b),p),
+        plot_tab = Panel(child=row(column(controls,download_b,exit_b),
+                                   p,
+                                   ),
                          title="Plot {}".format(self.sel_csv),
                          closable=True,
                          name=str(self.sel_csv))#name of tab is csv filename
         
         
-        self.figs[self.sel_csv]=p
-        self.x_sel[self.sel_csv]=x_sel
-        self.y_sel[self.sel_csv]=y_sel
-        self.y_sel2[self.sel_csv]=y_sel2
+        plot_tab.tags = [session_id]
+        download_b.js_on_change('tags',CustomJS(args=dict(t=plot_tab),
+                                          code=JScode_fetch))
         
         self.tabs.tabs.append(plot_tab)
 #        self.update_plot()
@@ -522,55 +513,105 @@ class SoftFocus(object):
     def update_plot_source(self, attr=None, old=None, new=None):
         tab_ix = self.tabs.active
         test = self.tabs.tabs[tab_ix].name
-        source = self.ly[test].data_source
         pass
     
     
     @_wait_message_decorator    
     def update_plot(self):
+        
         #find table name of active tab and its bokeh instances
         tab_ix = self.tabs.active
+        active_tab = self.tabs.tabs[tab_ix]
         test = self.tabs.tabs[tab_ix].name#contains csv filename
         
-        p=self.figs[test]
-        x_sel=self.x_sel[test]
-        y_sel=self.y_sel[test]
-        y_sel2=self.y_sel2[test]
+        #get variables from tab and DataFrame
+        p=active_tab.select_one({'name':'plot'})
+        x_sel=active_tab.select_one({'name':'x_sel'})
+        y_sel=active_tab.select_one({'name':'y_sel'})
+        y_sel2=active_tab.select_one({'name':'y_sel2'})
         plot_df = self.plot_dfs[test]
+        source = ColumnDataSource(plot_df)
         
-        self.ly[test].visible = True
-        p.xaxis[0].visible=True
-        p.yaxis[0].visible=True
-        p.xaxis[0].axis_label=x_sel.value
-        p.yaxis[0].axis_label=y_sel.value
+        #Replace entirely p with a new plot
+        new_p = Plot(
+                 x_range=DataRange1d(), 
+                 y_range=DataRange1d(), 
+                 plot_height=600,
+                 plot_width=600,
+                 title=Title(text=self.sel_csv),
+                 name='plot')
         
-        # add a line renderer with legend and line thickness    
-        self.ly[test].glyph.x = x_sel.value
-        self.ly[test].glyph.y = y_sel.value
-        s = plot_df[y_sel.value].min()
-        e = plot_df[y_sel.value].max()
-        p.y_range.start = s - abs(s*0.1)
-        p.y_range.end   = e + abs(e*0.1)
-        if y_sel2.value.strip() != 'None':
-            self.ly2[test].glyph.x = x_sel.value
-            self.ly2[test].glyph.y = y_sel2.value
-            self.ly2[test].visible=True
-            p.yaxis[1].visible=True
-            s = plot_df[y_sel2.value].min()
-            e = plot_df[y_sel2.value].max()
-            p.extra_y_ranges['right_axis'].start = s - abs(s*0.1)
-            p.extra_y_ranges['right_axis'].end   = e + abs(e*0.1)
-            p.legend.items = [LegendItem(label=y_sel.value,
-                                         renderers=[self.ly[test]]),
+        
+        active_tab.child.children[active_tab.child.children.index(p)]=new_p
+        del p
+        p = new_p
+        
+        
+        #see https://bokeh.github.io/blog/2017/7/5/idiomatic_bokeh/
+        print('making Linear Axes:{0} {1}'.format(x_sel.value,y_sel.value))
+        time.sleep(1)
+        x_axis = LinearAxis(
+                axis_label = x_sel.value,
+                ticker=BasicTicker(desired_num_ticks =10),
+                name='x_axis')
+        y_axis = LinearAxis(
+                axis_label = y_sel.value,
+                ticker=BasicTicker(desired_num_ticks =10),
+                name='y_axis')
+        print('making Linear Axes: done')
+        
+        #primary y-axis
+        ly = p.add_glyph(source,
+                   Line(x=x_sel.value, 
+                   y=y_sel.value, 
+                   line_width=2,
+                   name = 'ly')
+                   )
+        print('adding X Linear Axes')
+        time.sleep(1)
+        print(p.title.visible)
+        p.add_layout(x_axis,'below')
+        print(p.title.visible)
+        
+        print('adding Y Linear Axes')
+        time.sleep(1)
+#        p.add_layout(y_axis,'left')
+#        p.y_range.renderers = [ly]
+        print('adding Linear Axes: done')
+        #secondary y-axis
+        
+        print('adding Legend')
+        time.sleep(1)
+        if y_sel2.value.strip() != 'None':#secondary y-axis            
+            y_axis2 = LinearAxis(
+                    axis_label = y_sel2.value,
+                    ticker=BasicTicker(desired_num_ticks=10),
+                    name='y_axis2',
+                    y_range_name='right_axis')
+            p.add_layout(y_axis2,'right')
+            p.extra_y_ranges = {"right_axis": DataRange1d()}
+            ly2 = p.add_glyph(source,
+                               Line(x=x_sel.value,
+                                   y=y_sel2.value,
+                                   line_width=2,
+                                   line_color='red',
+                                   name = 'ly2'),
+                               y_range_name='right_axis'
+                              )
+            p.extra_y_ranges['right_axis'].renderers = [ly2]
+            leg_items = [LegendItem(label=y_sel.value,
+                                         renderers=[ly]),
                              LegendItem(label=y_sel2.value,
-                                        renderers=[self.ly2[test]])]
+                                       renderers=[ly2])]
         else:
-            self.ly2[test].visible=False
-            p.yaxis[1].visible=False
-            
-            p.legend.items = [LegendItem(label=y_sel.value,
-                                         renderers=[self.ly[test]])]
-            
+            leg_items = [LegendItem(label=y_sel.value,
+                                                 renderers=[ly])]
+        print(p.legend)    
+        p.add_layout(Legend(items=leg_items,
+                                location='top_right')
+                     )
+        print(p.xaxis)
+        print(p.x_range)
            
     def print_active_tab(self):
         """
@@ -595,8 +636,6 @@ class SoftFocus(object):
         del self.y_sel[curr_csv]
         del self.y_sel2[curr_csv]
         del self.figs[curr_csv]
-        del self.ly[curr_csv]
-        del self.ly2[curr_csv]
         
         #self.tabs.tabs.pop(tab_ix)
         del self.tabs.tabs[tab_ix]
@@ -609,10 +648,13 @@ class SoftFocus(object):
     def download(self):
         tab_ix = self.tabs.active
         test = self.tabs.tabs[tab_ix].name
-        p=self.figs[test]
+        p=self.figs[test]#get plot handle of the active tab
         dummy = p.select(name='dummy')[0]#handle invisible model
         session_id= str(self.document.session_context._id)
-        data = pd.DataFrame(self.ly[test].data_source.data)
+        #find the line Glyph in the plot (named 'ly')
+        ly = p.select(name='ly')[0]
+        
+        data = pd.DataFrame(ly.data_source.data)
         dirpath = os.path.join(os.path.dirname(__file__),'static','uploads')
         xlsxpath = os.path.join(dirpath,session_id+'_output.xlsx')
         if os.path.exists(xlsxpath):
