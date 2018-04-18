@@ -25,8 +25,7 @@ table. Then select one or several of them and plot their content. The objective
 is to be able to compare efficiently variables against each other, but also
 observational units against each other.
 
-This template uses the sample data of Bokeh, so the different csv files do not
-represent similar observational units.
+By default, this template creates 16 csv files contaning random values.
 
 
 Some functionalities of this template:
@@ -49,9 +48,9 @@ Things to add/improve in the template:
                       
 
 author: https://github.com/hyamanieu/
-V 0.1
+V 0.1b
 """
-__version__ = '0.1'
+__version__ = '0.1b'
 
 
 import sys
@@ -104,7 +103,7 @@ logger.addHandler(file_handler)
 
 
 
-
+CURRENT_DIR = os.path.dirname(__file__)
 
 class SoftFocus(object):
     """class to view and process bokeh sample data using a bokeh server.
@@ -172,11 +171,15 @@ class SoftFocus(object):
             sys.exit(0)
         
         elif len(sys.argv)==1:
-            from bokeh.util.sampledata import external_data_dir
-            data_dir = external_data_dir()
-            if not os.path.exists(data_dir):
-                from bokeh.util.sampledata import download as bokeh_download
-                bokeh_download()                
+            data_dir = os.path.join(CURRENT_DIR,'..','tests')
+            if (not os.path.exists(data_dir)
+                or (len(os.listdir(data_dir))<1)
+                ):
+                logger.info('Creating new test folder...')
+                logger.info('{0}'.format(data_dir))
+                os.mkdir(data_dir)
+                from create_random import create_random
+                create_random(data_dir)               
         elif len(sys.argv)==2:
             data_dir = sys.argv[1]
             if not os.path.isdir(data_dir):
@@ -287,7 +290,8 @@ class SoftFocus(object):
         
         #add a status text above all tabs
         self.info_text = Div(text='<font color="green">ready.</font>',
-                                 width=200, height=25)
+                                 sizing_mode= "stretch_both",
+                                 height=25)
         #main layout
         self.layout = column([self.info_text,self.tabs])
         
@@ -320,9 +324,10 @@ class SoftFocus(object):
                                                         val,
                                               ''.join(traceback.format_tb(tb)),
                                                         f))
-                self.info_text.text = ('<font color="red">'
-                                       'Error: {0}'
-                                       '</font>').format(str(err))
+                self.info_text.text = (
+                 '<font color="red">'
+                 'Error: {0}'
+                 '</font>').format(traceback.format_exception_only(err,val)[0])
                 return
             self.info_text.text = '<font color="green">ready.</font>'
             return r
