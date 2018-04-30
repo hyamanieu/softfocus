@@ -52,11 +52,10 @@ optional arguments:
     --args folder/  \\list csv files from designated folder
 ```
 
-The first time you run it, a sample data set will be generated in `tests/` if you haven't done so yet. This might change in the future where a more appropriate dataset will be used.
+The first time you run it, a sample data set will be generated in `tests/` if you haven't done so yet.
 
 ## Outlook / Contributing
 Things to add/improve in the template:
-- find a better method to change between column names for the axes
 - delete excess xls files in a separate thread without document lock
 - use Tornado (or anything else) to implement the download method without dummy
 - make a main class for the main tab/multi tab functionality, then subclasses for the type of database (csv folders, sql, hd5...)
