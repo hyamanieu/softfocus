@@ -60,7 +60,6 @@ import os
 from bokeh.layouts import row, widgetbox, column
 from bokeh.models import (Button,
                           ColumnDataSource,
-                          Circle,
                           LinearAxis,  
                           DataRange1d,  
                           CustomJS,  
@@ -69,7 +68,11 @@ from bokeh.models import (Button,
                           BasicTicker, 
                           Title,
                           Spacer,
-                          ) 
+                          BoxZoomTool,
+                          SaveTool,
+                          ResetTool,
+                          PanTool,
+                          HoverTool) 
 #from bokeh.models.formatters import (BasicTickFormatter,
 #                                     NumeralTickFormatter)
 from bokeh.models.annotations import LegendItem, Legend 
@@ -131,12 +134,10 @@ class SoftFocus(object):
         #following method parses arguments and create the layout
         # (in self.layout) with the main tab
         self.create()
-        logger.info('layout created')
-        
+        logger.info('layout created')        
         #add the layout to the document
         self.document.title = "Soft Focus"
         self.document.add_root(self.layout)
-        logger.info('layout added to document')
         
         #show main table
 #        self.update()
@@ -482,8 +483,6 @@ class SoftFocus(object):
                                 }
                                 return response.text();
                             });
-        
-        
         """
         
         
@@ -506,7 +505,6 @@ class SoftFocus(object):
         
         self.tabs.tabs.append(plot_tab)
         self.create_plot_figure(plot_tab)
-#        self.update_plot()
     
     
     @_wait_message_decorator
@@ -554,7 +552,12 @@ class SoftFocus(object):
                  plot_width=600, 
                  title=Title(text=self.sel_csv), 
                  name='plot')
-         
+        p.add_tools(BoxZoomTool(),
+                    SaveTool(),
+                    ResetTool(),
+                    PanTool(),
+                    HoverTool(tooltips=[('x','$x'),
+                                        ('y','$y')]))
          
         #see https://bokeh.github.io/blog/2017/7/5/idiomatic_bokeh/ 
         x_axis = LinearAxis( 
@@ -570,7 +573,8 @@ class SoftFocus(object):
         ly = p.add_glyph(source, 
                    Line(x=x_sel.value,  
                    y=y_sel.value,  
-                   line_width=2), 
+                   line_width=2,
+                   line_color='black'),
                    name = 'ly'
                    ) 
         
@@ -648,7 +652,7 @@ class SoftFocus(object):
         data.to_excel(writer,'data'+test)
 #        infos.to_excel(writer,'info'+infos['Testname'])        
         writer.close()
-        #change its size
+        #change tag to activate JS_fetch callback
         download_b.tags = [download_b.tags[0]
                             + pd.np.random.choice([-1,1],size=1)[0]]
         
