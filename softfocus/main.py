@@ -25,8 +25,12 @@ table. Then select one or several of them and plot their content. The objective
 is to be able to compare efficiently variables against each other, but also
 observational units against each other.
 
+<<<<<<< HEAD
 By default, this template creates 16 csv files contaning random values with
 3 variables: time, volt, current
+=======
+By default, this template creates 16 csv files contaning random values.
+>>>>>>> master
 
 
 Some functionalities of this template:
@@ -49,9 +53,15 @@ Things to add/improve in the template:
                       
 
 author: https://github.com/hyamanieu/
+<<<<<<< HEAD
 V 0.2
 """
 __version__ = '0.2'
+=======
+V 0.1b
+"""
+__version__ = '0.1b'
+>>>>>>> master
 
 
 import sys
@@ -59,6 +69,7 @@ import os
 
 #Bokeh imports
 from bokeh.layouts import row, widgetbox, column
+<<<<<<< HEAD
 from bokeh.models import Button, ColumnDataSource, Circle
 from bokeh.models import (LinearAxis, 
                           DataRange1d, 
@@ -71,6 +82,26 @@ from bokeh.models import (LinearAxis,
 #from bokeh.models.formatters import (BasicTickFormatter,
 #                                     NumeralTickFormatter)
 from bokeh.models.annotations import LegendItem, Legend
+=======
+from bokeh.models import (Button,
+                          ColumnDataSource,
+                          LinearAxis,  
+                          DataRange1d,  
+                          CustomJS,  
+                          Plot, 
+                          Line, 
+                          BasicTicker, 
+                          Title,
+                          Spacer,
+                          BoxZoomTool,
+                          SaveTool,
+                          ResetTool,
+                          PanTool,
+                          HoverTool) 
+#from bokeh.models.formatters import (BasicTickFormatter,
+#                                     NumeralTickFormatter)
+from bokeh.models.annotations import LegendItem, Legend 
+>>>>>>> master
 from bokeh.models.widgets import (DataTable, 
                                   DateFormatter, 
                                   TableColumn,
@@ -80,7 +111,6 @@ from bokeh.models.widgets import (DataTable,
                                   Select,
                                   TextInput,
                                   Div)
-from bokeh.plotting import figure
 from bokeh.io import curdoc
 #specific imports for multithreading
 #from tornado import gen
@@ -110,8 +140,13 @@ logger.setLevel(logging.DEBUG)
 logger.addHandler(file_handler)
 
 
+<<<<<<< HEAD
 CURRENT_DIR = os.path.dirname(__file__)
 
+=======
+
+CURRENT_DIR = os.path.dirname(__file__)
+>>>>>>> master
 
 class SoftFocus(object):
     """class to view and process bokeh sample data using a bokeh server.
@@ -130,12 +165,10 @@ class SoftFocus(object):
         #following method parses arguments and create the layout
         # (in self.layout) with the main tab
         self.create()
-        logger.info('layout created')
-        
+        logger.info('layout created')        
         #add the layout to the document
         self.document.title = "Soft Focus"
         self.document.add_root(self.layout)
-        logger.info('layout added to document')
         
         #show main table
 #        self.update()
@@ -149,8 +182,13 @@ class SoftFocus(object):
         self.sel_csv = None#selected row from main table
         
         
+<<<<<<< HEAD
         #dicts hold data from opened samples
         self.plot_dfs=dict()#dataframe of each plotted test
+=======
+        #dicts hold data from all opened tabs
+        self.plot_dfs = dict()
+>>>>>>> master
         
         
         
@@ -159,9 +197,7 @@ class SoftFocus(object):
         
         To create the main layout, the method _create_folder is called. Other
         methods could be called depending on the argument if we want to fetch
-        data with different methods, e.g. _create_sql
-        
-        
+        data with different methods, e.g. _create_sql        
         """
         
         
@@ -181,7 +217,11 @@ class SoftFocus(object):
                 logger.info('{0}'.format(data_dir))
                 os.mkdir(data_dir)
                 from create_random import create_random
+<<<<<<< HEAD
                 create_random(data_dir)
+=======
+                create_random(data_dir)               
+>>>>>>> master
         elif len(sys.argv)==2:
             data_dir = sys.argv[1]
             if not os.path.isdir(data_dir):
@@ -195,6 +235,9 @@ class SoftFocus(object):
             
     
     def _create_folder(self,data_dir):
+        """
+        create softfocus instance based on folder data
+        """
         #list only csv files, populate a dict with general info about the files
         logger.info('Database in a csv folder: {0}'.format(data_dir))
         list_dir = os.listdir(data_dir)
@@ -288,12 +331,18 @@ class SoftFocus(object):
                               sizing_mode = 'stretch_both')
         #need to add this callback otherwise the table will turn invisible
         #after coming back to this main tab
-        self.tabs.on_change('active',lambda attr, old, new: self.update())
+        self.tabs.on_change('active',
+                            self.changed_tab_cb)
         
         #add a status text above all tabs
         self.info_text = Div(text='<font color="green">ready.</font>',
+<<<<<<< HEAD
                              sizing_mode = "stretch_both",
                              height=25)
+=======
+                                 sizing_mode= "stretch_both",
+                                 height=25)
+>>>>>>> master
         #main layout
         self.layout = column([self.info_text,self.tabs])
         
@@ -336,6 +385,14 @@ class SoftFocus(object):
         return wait_please
     
     
+    def changed_tab_cb(self, attr, old, new):
+        """
+        Callback called when another tab is selected
+        """
+        if new ==0:#main tab
+            self.update()
+    
+    
     #call function when selection on table
     def sel_table(self, attr, old, new):
         """
@@ -368,7 +425,8 @@ class SoftFocus(object):
             if len(szfilt)==2:
                 szfilt_max = max(szfilt)
                 szfilt_min = min(szfilt)
-                filt &= (df['size(kB)'] >= szfilt_min)&(df['size(kB)'] <= szfilt_max)
+                filt &= ((df['size(kB)'] >= szfilt_min)
+                          &(df['size(kB)'] <= szfilt_max))
             elif len(szfilt)==1:
                 szfilt = szfilt[0]
                 filt &= (df['size(kB)'] == szfilt)
@@ -410,6 +468,7 @@ class SoftFocus(object):
         self.plot_dfs[self.sel_csv] = plot_df
         
         cols = plot_df.columns.tolist()
+<<<<<<< HEAD
         x_sel = Select(title='X-Axis',
                        value=cols[0],
                        options=cols,
@@ -418,17 +477,32 @@ class SoftFocus(object):
                        name='y_sel')
         y_sel2 = Select(title='Y-Axis 2',value='None',options=cols+['None'],
                        name='y_sel2')
+=======
+        x_sel = Select(title='X-Axis', 
+                       value=cols[0], 
+                       options=cols, 
+                       name='x_sel') 
+        y_sel = Select(title='Y-Axis',value=cols[1],options=cols, 
+                       name='y_sel') 
+        y_sel2 = Select(title='Y-Axis 2',value='None',options=cols+['None'], 
+                        name='y_sel2')
+>>>>>>> master
                
         #exit button
         exit_b = Button(label="Exit", button_type="success")
         exit_b.on_click(self.remove_current_tab)
         #download button
         download_b = Button(label="Download", button_type="success",
+<<<<<<< HEAD
                             name = "download_b")
+=======
+                            name='download_b')
+>>>>>>> master
         download_b.on_click(self.download)
         download_b.tags = [0]
         
         
+<<<<<<< HEAD
         #prepare figure
         p = Plot(x_range=DataRange1d(), 
                  y_range=DataRange1d(), 
@@ -438,12 +512,17 @@ class SoftFocus(object):
                  name='plot')
         #plot button
         plot_b = Button(label="Plot", button_type="success",name='plot_b')
+=======
+        #plot button
+        plot_b = Button(label="Plot", button_type="success",name='plot_b') 
+>>>>>>> master
         plot_b.on_click(self.update_plot)
         
         #text to indicate widgets manipulating the plot only
         plot_group_text = Div(text='<b>Plot properties</b>')
 
         #dummy idea from https://stackoverflow.com/questions/44212250/bokeh-widgets-call-customjs-and-python-callback-for-single-event  
+<<<<<<< HEAD
         #the javascript called linked to this dummy circle element is meant
         #to activate the download of whatever file is in the path 
         #./static/uploads/sessionid_output.xlsx, where sessionid is the id of the
@@ -458,6 +537,17 @@ class SoftFocus(object):
         var filename = t.name;//file name on client side
         var get_path = '/softfocus/static/uploads/';//file path on server side
         var session_id = t.tags[0];
+=======
+        #the javascript callback is linked to the tag attribute of the download
+        #button (download_b.tag).
+        #To activate the download, download_b.tag needs to change, then
+        #./static/uploads/sessionid_output.xlsx is downloaded, where sessionid 
+        #is the id of the current session.
+        JScode_fetch = """
+        var filename = t.name;//file name on client side 
+        var get_path = '/softfocus/static/uploads/';//file path on server side
+        var session_id = t.tags[0]; 
+>>>>>>> master
         get_path = get_path.concat(session_id);
         get_path = get_path.concat('_output.xlsx')
         filename = filename.concat('.xlsx');
@@ -482,35 +572,53 @@ class SoftFocus(object):
                                 }
                                 return response.text();
                             });
-        
-        
         """
         
+<<<<<<< HEAD
         session_id= str(self.document.session_context._id)
 #        dummy.glyph.js_on_change('size', CustomJS(args=dict(p=p),
 #                                          code=JScode_fetch))
+=======
+        
+>>>>>>> master
         
         #plot controls together in a box
         controls = widgetbox(plot_group_text,x_sel,y_sel,y_sel2,plot_b)
         #tab panel for this plot, differenciated with its name        
         plot_tab = Panel(child=row(column(controls,download_b,exit_b),
+<<<<<<< HEAD
                                    p,
+=======
+                                   Spacer(height=600, 
+                                          width=600)
+>>>>>>> master
                                    ),
                          title="Plot {}".format(self.sel_csv),
                          closable=True,
                          name=str(self.sel_csv))#name of tab is csv filename
         
+<<<<<<< HEAD
         
         plot_tab.tags = [session_id]
         download_b.js_on_change('tags',CustomJS(args=dict(t=plot_tab),
                                           code=JScode_fetch))
+=======
+        session_id= str(self.document.session_context._id)
+        plot_tab.tags = [session_id] 
+        download_b.js_on_change('tags',CustomJS(args=dict(t=plot_tab), 
+                                          code=JScode_fetch)) 
+>>>>>>> master
         
         self.tabs.tabs.append(plot_tab)
-#        self.update_plot()
+        self.create_plot_figure(plot_tab)
     
     
     @_wait_message_decorator
     def update_plot_source(self, attr=None, old=None, new=None):
+        """
+        filter source
+        Not implemented yet
+        """
         tab_ix = self.tabs.active
         test = self.tabs.tabs[tab_ix].name
         pass
@@ -518,6 +626,7 @@ class SoftFocus(object):
     
     @_wait_message_decorator    
     def update_plot(self):
+<<<<<<< HEAD
         
         #find table name of active tab and its bokeh instances
         tab_ix = self.tabs.active
@@ -614,13 +723,100 @@ class SoftFocus(object):
         print(p.x_range)
            
     def print_active_tab(self):
+=======
+>>>>>>> master
         """
-        non used: method for debugging
-        """        
+        Get active tab then create/update its plot
+        """
         tab_ix = self.tabs.active
-        test = self.tabs.tabs[tab_ix].name
-        print(test)
+        active_tab = self.tabs.tabs[tab_ix]
+        #col of widgets in place 0, plot in place 1
+        self.create_plot_figure(active_tab)
         
+    
+    
+    
+    def create_plot_figure(self, active_tab):
+        """
+        create a new plot and insert it in given tab.
+        """
+        #find table name of active tab and its bokeh instances
+        test = active_tab.name#contains csv filename
+        x_sel=active_tab.select_one({'name':'x_sel'}) 
+        y_sel=active_tab.select_one({'name':'y_sel'}) 
+        y_sel2=active_tab.select_one({'name':'y_sel2'}) 
+        plot_df = self.plot_dfs[test]
+        source = ColumnDataSource(plot_df) 
+         
+        #Replace entirely p with a new plot 
+        p = Plot( 
+                 x_range=DataRange1d(),  
+                 y_range=DataRange1d(),  
+                 plot_height=600, 
+                 plot_width=600, 
+                 title=Title(text=self.sel_csv), 
+                 name='plot')
+        p.add_tools(BoxZoomTool(),
+                    SaveTool(),
+                    ResetTool(),
+                    PanTool(),
+                    HoverTool(tooltips=[('x','$x'),
+                                        ('y','$y')]))
+         
+        #see https://bokeh.github.io/blog/2017/7/5/idiomatic_bokeh/ 
+        x_axis = LinearAxis( 
+                axis_label = x_sel.value, 
+                ticker=BasicTicker(desired_num_ticks =10), 
+                name='x_axis') 
+        y_axis = LinearAxis( 
+                axis_label = y_sel.value, 
+                ticker=BasicTicker(desired_num_ticks =10), 
+                name='y_axis') 
+        
+        #primary y-axis 
+        ly = p.add_glyph(source, 
+                   Line(x=x_sel.value,  
+                   y=y_sel.value,  
+                   line_width=2,
+                   line_color='black'),
+                   name = 'ly'
+                   ) 
+        
+        p.add_layout(x_axis,'below') 
+         
+        p.add_layout(y_axis,'left') 
+        p.y_range.renderers = [ly]
+        #secondary y-axis          
+        if y_sel2.value.strip() != 'None':#secondary y-axis             
+            y_axis2 = LinearAxis( 
+                    axis_label = y_sel2.value, 
+                    ticker=BasicTicker(desired_num_ticks=10), 
+                    name='y_axis2', 
+                    y_range_name='right_axis') 
+            p.add_layout(y_axis2,'right') 
+            p.extra_y_ranges = {"right_axis": DataRange1d()} 
+            ly2 = p.add_glyph(source, 
+                               Line(x=x_sel.value, 
+                                   y=y_sel2.value, 
+                                   line_width=2, 
+                                   line_color='red'), 
+                               y_range_name='right_axis', 
+                               name = 'ly2'
+                              ) 
+            p.extra_y_ranges['right_axis'].renderers = [ly2] 
+            leg_items = [LegendItem(label=y_sel.value, 
+                                         renderers=[ly]),
+                         LegendItem(label=y_sel2.value,
+                                    renderers=[ly2])]
+        else: 
+            leg_items = [LegendItem(label=y_sel.value, 
+                                                 renderers=[ly])] 
+        
+        p.add_layout(Legend(items=leg_items, 
+                                location='top_right') 
+                     )
+        active_tab.child.children[1] = p
+        return p
         
     #callback function to remove a tab
     def remove_current_tab(self):
@@ -628,15 +824,18 @@ class SoftFocus(object):
         Callback function to remove a tab
         """
         tab_ix = self.tabs.active
-        curr_csv = self.tabs.tabs[tab_ix].name
         if tab_ix == 0:
             return#do nothing if main tab where all tests are   
+<<<<<<< HEAD
         
         del self.x_sel[curr_csv]
         del self.y_sel[curr_csv]
         del self.y_sel2[curr_csv]
         del self.figs[curr_csv]
         
+=======
+                
+>>>>>>> master
         #self.tabs.tabs.pop(tab_ix)
         del self.tabs.tabs[tab_ix]
         
@@ -647,6 +846,7 @@ class SoftFocus(object):
     @_wait_message_decorator
     def download(self):
         tab_ix = self.tabs.active
+<<<<<<< HEAD
         test = self.tabs.tabs[tab_ix].name
         p=self.figs[test]#get plot handle of the active tab
         dummy = p.select(name='dummy')[0]#handle invisible model
@@ -655,7 +855,18 @@ class SoftFocus(object):
         ly = p.select(name='ly')[0]
         
         data = pd.DataFrame(ly.data_source.data)
+=======
+        active_tab = self.tabs.tabs[tab_ix] 
+        test = self.tabs.tabs[tab_ix].name#contains csv filename
+        download_b = active_tab.select_one({'name':'download_b'})
+        p=active_tab.select_one({'name':'plot'})
+        session_id= str(self.document.session_context._id)
+        ly = p.select_one({'name':'ly'})
+        data = pd.DataFrame(ly.data_source.data) 
+>>>>>>> master
         dirpath = os.path.join(os.path.dirname(__file__),'static','uploads')
+        if not os.path.exists(dirpath):
+            os.makedirs(dirpath)
         xlsxpath = os.path.join(dirpath,session_id+'_output.xlsx')
         if os.path.exists(xlsxpath):
             os.remove(xlsxpath)
@@ -665,9 +876,9 @@ class SoftFocus(object):
         data.to_excel(writer,'data'+test)
 #        infos.to_excel(writer,'info'+infos['Testname'])        
         writer.close()
-        #change its size
-        dummy.glyph.size = (dummy.glyph.size 
-                            + pd.np.random.choice([-1,1],size=1)[0])
+        #change tag to activate JS_fetch callback
+        download_b.tags = [download_b.tags[0]
+                            + pd.np.random.choice([-1,1],size=1)[0]]
         
 
 #    @gen.coroutine

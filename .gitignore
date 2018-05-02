@@ -1,3 +1,8 @@
 __pycache__
 *.log
+<<<<<<< HEAD
 tests/
+=======
+tests/
+softfocus/static/*
+>>>>>>> master
