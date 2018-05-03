@@ -665,7 +665,7 @@ class SoftFocus(object):
         for dirpath, dirnames, filenames in os.walk(dirpath,topdown=False):
             for fname in filenames:
                 fpath = os.path.join(dirpath,fname)
-                file_age = (now - os.getatime(fpath))/3600
+                file_age = (now - os.path.getatime(fpath))/3600
                 if ((file_age>24) and fpath.endswith('output.xlsx')):
                     os.remove(fpath)
         
