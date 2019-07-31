@@ -50,7 +50,7 @@ Things to add/improve in the template:
 author: https://github.com/hyamanieu/
 V 0.1b
 """
-__version__ = '0.1b'
+__version__ = '0.2'
 
 
 import sys
@@ -86,6 +86,9 @@ from bokeh.models.widgets import (DataTable,
                                   TextInput,
                                   Div)
 from bokeh.io import curdoc
+#to enable decorator
+from bokeh.util.future import  get_param_info, signature
+
 #specific imports for multithreading
 #from tornado import gen
 #from bokeh.document import without_document_lock
@@ -255,7 +258,7 @@ class SoftFocus(object):
         #button to plot
         self.plot_button = Button(label="Plot", button_type="success")
         self.plot_button.on_click(self.add_plot_tab)
-        self.plot_button.disabled = True#active only when csv is selected
+        self.plot_button.disabled = False#active only when csv is selected
         
         #make table widget
         #table formatting
@@ -337,6 +340,29 @@ class SoftFocus(object):
                 return
             self.info_text.text = '<font color="green">ready.</font>'
             return r
+        
+                
+        def wait_on_event_0(self):
+            wait_please(self)
+            
+        def wait_on_event_1(self,event):
+            wait_please(self, event)
+            
+        def wait_on_change(self, attr, old, new):
+            wait_please(self, attr, old, new)
+            
+            
+        sig = signature(f)
+        arg_names, arg_defaults = get_param_info(sig)
+        if arg_names == ['self']:
+            return wait_on_event_0
+        elif arg_names == ['self', 'event']:
+            return wait_on_event_1
+        elif arg_names == ['self', 'attr', 'old', 'new']:
+            return wait_on_change        
+        
+
+        
         return wait_please
     
     
@@ -354,6 +380,7 @@ class SoftFocus(object):
         Selection of a cell/row in a tab
         """
         sels = self.data_table.source.selected['1d']['indices']
+        print(sels)
         
         if sels:#if not empty
             self.plot_button.disabled = False
