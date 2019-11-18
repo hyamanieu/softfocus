@@ -242,18 +242,18 @@ class SoftFocus(object):
                                       value=(first_date,last_date),
                                       step=1)
         self.date_slider.on_change('value', 
-                                   lambda attr, old, new: self.update())
+                                   self.update)
         
         #byte size selection through text input        
         self.size_inputtext = TextInput(title='size in kbytes')
         self.size_inputtext.value = "fmt: '100' or '10..200'"
         self.size_inputtext.on_change('value',
-                                      lambda attr, old, new: self.update())
+                                      self.update)
         
         #filter by file name        
         self.csvname_text = TextInput(title='Testname')
         self.csvname_text.on_change('value',
-                                     lambda attr, old, new: self.update())
+                                     self.update)
         
         #button to plot
         self.plot_button = Button(label="Plot", button_type="success")
@@ -276,7 +276,7 @@ class SoftFocus(object):
                                index_position=None,
                                editable=False,
                                )
-        self.data_table.source.on_change('selected',self.sel_table)
+        self.data_table.source.selected.on_change('indices',self.sel_table)
         
         #controls in a box
         controls = widgetbox(self.date_slider,
@@ -362,7 +362,6 @@ class SoftFocus(object):
             return wait_on_change        
         
 
-        
         return wait_please
     
     
@@ -370,8 +369,9 @@ class SoftFocus(object):
         """
         Callback called when another tab is selected
         """
+        
         if new ==0:#main tab
-            self.update()
+            self.update(attr, old, new)
     
     
     #call function when selection on table
@@ -379,8 +379,7 @@ class SoftFocus(object):
         """
         Selection of a cell/row in a tab
         """
-        sels = self.data_table.source.selected['1d']['indices']
-        print(sels)
+        sels = self.data_table.source.selected.indices
         
         if sels:#if not empty
             self.plot_button.disabled = False
@@ -391,7 +390,7 @@ class SoftFocus(object):
             
     #define callback function to show new table
     @_wait_message_decorator
-    def update(self, attr=None, old=None, new=None):
+    def update(self, attr, old, new):
         """
         Callback function to show the main table with all tests
         """
@@ -407,11 +406,11 @@ class SoftFocus(object):
             if len(szfilt)==2:
                 szfilt_max = max(szfilt)
                 szfilt_min = min(szfilt)
-                filt &= ((df['size(kB)'] >= szfilt_min)
-                          &(df['size(kB)'] <= szfilt_max))
+                filt &= ((df['size (kB)'] >= szfilt_min)
+                          &(df['size (kB)'] <= szfilt_max))
             elif len(szfilt)==1:
                 szfilt = szfilt[0]
-                filt &= (df['size(kB)'] == szfilt)
+                filt &= (df['size (kB)'] == szfilt)
             else:
                 self.size_inputtext.value = "fmt: '100' or '98..102'"
                 
